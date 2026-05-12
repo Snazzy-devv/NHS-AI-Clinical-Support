@@ -57,7 +57,7 @@ if not df.empty:
                 "referral_text": str(current_data['referral_text'])
             }
             
-            resp = requests.post("https://nhs-ai-clinical-support.onrender.com/analyze", json=payload).json()
+            resp = requests.post("https://nhs-ai-clinical-support-gl6v.onrender.com/analyze", json=payload).json()
             
             
 
