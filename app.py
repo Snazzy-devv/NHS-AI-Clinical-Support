@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Premium Custom CSS (Hospital/Enterprise Style) ---
+# --- Premium Custom CSS ---
 st.markdown("""
     <style>
         /* Main App Background */
@@ -22,14 +22,43 @@ st.markdown("""
         
         /* Sidebar Styling */
         [data-testid="stSidebar"] {
-            background-color: #002f5c; /* Deep NHS Navy */
+            background-color: #002f5c;
             color: white;
         }
         [data-testid="stSidebar"] * {
             color: white !important;
         }
 
-        /* Hospital Card Style for Metrics and Containers */
+        /* UPLOADER VISIBILITY FIX: Changing background and border */
+        [data-testid="stFileUploader"] section {
+            background-color: #e1e8ed !important; /* Visible light grey/blue */
+            border: 2px dashed #005eb8 !important; /* NHS Blue dash */
+            border-radius: 10px;
+            padding: 10px;
+        }
+        [data-testid="stFileUploader"] label {
+            color: #002f5c !important; /* Dark text for visibility */
+            font-weight: bold;
+        }
+        [data-testid="stFileUploader"] button {
+            background-color: #005eb8 !important;
+            color: white !important;
+        }
+
+        /* Blue Header Styling */
+        .main-header {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: white;
+            background-color: #005eb8;
+            font-weight: 800;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* KPI Metric Cards */
         div[data-testid="stMetricValue"] {
             background-color: white;
             padding: 20px;
@@ -37,20 +66,8 @@ st.markdown("""
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             border-left: 5px solid #005eb8;
         }
-        
-        /* UPDATED: Blue Header Styling */
-        .main-header {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: white; /* Changed to white for blue bg */
-            background-color: #005eb8; /* NHS Blue */
-            font-weight: 800;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
 
-        /* Dynamic Button Effect */
+        /* Buttons */
         .stButton>button {
             width: 100%;
             border-radius: 8px;
@@ -60,42 +77,33 @@ st.markdown("""
             border: none;
             font-weight: bold;
         }
-        .stButton>button:hover {
-            background-color: #003087;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,94,184,0.3);
-        }
-
-        /* Table Styling */
-        .stDataFrame {
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
     </style>
     """, unsafe_allow_html=True)
 
-# --- Sidebar Management ---
+# --- Sidebar Management (Items Moved Up) ---
 with st.sidebar:
-    # ADDED: Logo at gateway section
+    # 1. Logo at the very top
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/NHS-Logo.svg/1280px-NHS-Logo.svg.png", width=120)
-    st.markdown("### **🏥 Clinical Gateway**")
+    st.markdown("## **🏥 Clinical Gateway**")
+    st.caption("Secure Workforce Entry")
     st.divider()
+    
+    # 2. File Upload with Visibility Fix
     st.subheader("📁 Data Ingestion")
-    file = st.file_uploader("Upload Caseload", type=['csv', 'xlsx', 'json'])
+    file = st.file_uploader("Drop patient caseload here", type=['csv', 'xlsx', 'json'])
     
     if file:
-        with st.spinner("Processing Records..."):
+        with st.spinner("Syncing Database..."):
             df_new, msg = process_upload(file)
             if df_new is not None:
-                st.success("Sync Complete")
+                st.success("Records Synchronized")
             else:
                 st.error(msg)
     
+    st.divider()
     st.info("System Version: 2.1.0-Enterprise")
 
 # --- Main Dashboard ---
-# UPDATED: Blue background applied via CSS class
 st.markdown('<div class="main-header">🏥 Clinical Decision Support: Population Health</div>', unsafe_allow_html=True)
 
 df = get_patients()
@@ -103,9 +111,8 @@ df = get_patients()
 if not df.empty:
     latest_df = df.sort_values('date').groupby('patient_id').tail(1)
     
-    # --- UPDATED: Dynamic & Clickable KPI Category Filters ---
+    # --- Dynamic & Clickable KPI Category Filters ---
     st.markdown("### 📊 Interactive Triage Summary")
-    st.caption("Click a button below to filter the caseload queue by category.")
     
     # Logic for categories
     risk_threshold = 3
@@ -116,11 +123,11 @@ if not df.empty:
     
     with m1:
         st.metric("Total Caseload", f"{len(latest_df)} Patients")
-        if st.button("View All Patients"):
+        if st.button("View Full Queue"):
             st.session_state['filter'] = 'all'
             
     with m2:
-        st.metric("High Risk", f"{len(high_risk_df)} Patients", delta="Requires Review", delta_color="inverse")
+        st.metric("Critical Flags", f"{len(high_risk_df)} Patients", delta="Requires Review", delta_color="inverse")
         if st.button("🔴 Filter High Risk"):
             st.session_state['filter'] = 'high'
             
@@ -131,23 +138,22 @@ if not df.empty:
 
     st.write("---")
 
-    # Apply Filter Logic
+    # Filter Application
     current_filter = st.session_state.get('filter', 'all')
     if current_filter == 'high':
         display_df = high_risk_df
-        table_title = "🚩 High Risk Queue (3+ Missed Appointments)"
+        table_title = "🚩 Critical Queue: High Missed Appointments"
     elif current_filter == 'stable':
         display_df = stable_df
-        table_title = "✅ Stable Engagement Queue"
+        table_title = "✅ Clinical Update: Stable Patients"
     else:
         display_df = latest_df
-        table_title = "📋 Full Caseload Queue"
+        table_title = "📋 Patient Caseload Master List"
 
     col_list, col_detail = st.columns([1.2, 1.8], gap="large")
     
     with col_list:
         st.subheader(table_title)
-        # Displaying the filtered dataframe
         st.dataframe(
             display_df[['patient_id', 'missed_appointments', 'engagement_drop_percent']], 
             use_container_width=True,
@@ -155,13 +161,12 @@ if not df.empty:
         )
         
         st.divider()
-        st.markdown("#### **Deep-Dive Action**")
-        target_id = st.selectbox("Select Patient Profile", display_df['patient_id'])
+        st.markdown("#### **Detailed Analysis Selection**")
+        target_id = st.selectbox("Search Patient ID", display_df['patient_id'])
         current_data = display_df[display_df['patient_id'] == target_id].iloc[0]
 
     with col_detail:
         if st.button(f"⚡ Generate AI Intelligence for {target_id}"):
-            # Dynamic Loading Bar for "Premium" feel
             progress_bar = st.progress(0)
             for i in range(100):
                 time.sleep(0.005)
@@ -176,33 +181,30 @@ if not df.empty:
             }
             
             try:
-                # Note: Ensure the URL matches your backend deployment
+                # Backend URL pointing to Render
                 resp = requests.post("https://nhs-ai-clinical-support-gl6v.onrender.com/analyze", json=payload).json()
                 
-                # Risk Visualization
                 risk_color = "#d4351c" if resp['risk_level'] == "HIGH" else "#ffdd00" if resp['risk_level'] == "MODERATE" else "#00703c"
                 
                 st.markdown(f"""
                     <div style="background-color: white; padding: 25px; border-radius: 15px; border-left: 10px solid {risk_color};">
                         <h2 style="margin:0; color: {risk_color};">{resp['risk_level']} RISK</h2>
-                        <p style="color: #505a5f;">Primary Context: <b>{resp['context'].upper()}</b></p>
+                        <p style="color: #505a5f;">Clinical Triage Context: <b>{resp['context'].upper()}</b></p>
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Chart Section
                 st.write("### 📈 Engagement Trajectory")
                 patient_history = df[df['patient_id'] == target_id].sort_values('date')
                 st.area_chart(patient_history.set_index('date')['engagement_drop_percent'])
                 
-                # AI Insights
-                st.markdown("### 🤖 AI Insight Reasoning")
+                st.markdown("### 🤖 Neural Alert Reasoning")
                 for alert in resp['alerts']:
                     st.warning(f"**Alert:** {alert}")
                 
                 st.caption(f"🛡️ **Governance:** {resp['governance']}")
                 
             except Exception as e:
-                st.error("Connection to AI Engine failed. Please verify the Render backend is live.")
+                st.error("Engine Connection Timeout. Verify Render backend is operational.")
 
 else:
-    st.info("No data detected. Please use the sidebar to upload patient records.")
+    st.info("System Ready. Please use the 'Clinical Gateway' in the sidebar to ingest patient data.")
