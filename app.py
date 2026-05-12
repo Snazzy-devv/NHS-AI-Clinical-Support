@@ -38,14 +38,16 @@ st.markdown("""
             border-left: 5px solid #005eb8;
         }
         
-        /* Custom Header */
+        /* UPDATED: Blue Header Styling */
         .main-header {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #005eb8;
+            color: white; /* Changed to white for blue bg */
+            background-color: #005eb8; /* NHS Blue */
             font-weight: 800;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #005eb8;
+            padding: 20px;
+            border-radius: 10px;
             margin-bottom: 30px;
+            text-align: center;
         }
 
         /* Dynamic Button Effect */
@@ -75,8 +77,9 @@ st.markdown("""
 
 # --- Sidebar Management ---
 with st.sidebar:
+    # ADDED: Logo at gateway section
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/NHS-Logo.svg/1280px-NHS-Logo.svg.png", width=120)
-    st.markdown("### **Clinical Gateway**")
+    st.markdown("### **🏥 Clinical Gateway**")
     st.divider()
     st.subheader("📁 Data Ingestion")
     file = st.file_uploader("Upload Caseload", type=['csv', 'xlsx', 'json'])
@@ -92,36 +95,69 @@ with st.sidebar:
     st.info("System Version: 2.1.0-Enterprise")
 
 # --- Main Dashboard ---
-st.markdown('<h1 class="main-header">🏥 Clinical Decision Support: Population Health</h1>', unsafe_allow_html=True)
+# UPDATED: Blue background applied via CSS class
+st.markdown('<div class="main-header">🏥 Clinical Decision Support: Population Health</div>', unsafe_allow_html=True)
 
 df = get_patients()
 
 if not df.empty:
     latest_df = df.sort_values('date').groupby('patient_id').tail(1)
     
-    # Dynamic Dashboard Summary (Dynamic Metrics)
+    # --- UPDATED: Dynamic & Clickable KPI Category Filters ---
+    st.markdown("### 📊 Interactive Triage Summary")
+    st.caption("Click a button below to filter the caseload queue by category.")
+    
+    # Logic for categories
+    risk_threshold = 3
+    high_risk_df = latest_df[latest_df['missed_appointments'] >= risk_threshold]
+    stable_df = latest_df[latest_df['missed_appointments'] < risk_threshold]
+    
     m1, m2, m3 = st.columns(3)
-    m1.metric("Total Caseload", f"{len(latest_df)} Patients", help="Total unique patients in current system")
-    m2.metric("Active Risks", f"{len(latest_df[latest_df['missed_appointments'] >= 3])}", "Behavioral Flags", delta_color="inverse")
-    m3.metric("System Health", "Operational", "Stable Latency")
+    
+    with m1:
+        st.metric("Total Caseload", f"{len(latest_df)} Patients")
+        if st.button("View All Patients"):
+            st.session_state['filter'] = 'all'
+            
+    with m2:
+        st.metric("High Risk", f"{len(high_risk_df)} Patients", delta="Requires Review", delta_color="inverse")
+        if st.button("🔴 Filter High Risk"):
+            st.session_state['filter'] = 'high'
+            
+    with m3:
+        st.metric("Stable Engagement", f"{len(stable_df)} Patients", delta="Operational")
+        if st.button("🟢 Filter Stable"):
+            st.session_state['filter'] = 'stable'
 
     st.write("---")
+
+    # Apply Filter Logic
+    current_filter = st.session_state.get('filter', 'all')
+    if current_filter == 'high':
+        display_df = high_risk_df
+        table_title = "🚩 High Risk Queue (3+ Missed Appointments)"
+    elif current_filter == 'stable':
+        display_df = stable_df
+        table_title = "✅ Stable Engagement Queue"
+    else:
+        display_df = latest_df
+        table_title = "📋 Full Caseload Queue"
 
     col_list, col_detail = st.columns([1.2, 1.8], gap="large")
     
     with col_list:
-        st.subheader("📋 Patient Queue")
-        # Displaying a cleaner dataframe
+        st.subheader(table_title)
+        # Displaying the filtered dataframe
         st.dataframe(
-            latest_df[['patient_id', 'missed_appointments', 'engagement_drop_percent']], 
+            display_df[['patient_id', 'missed_appointments', 'engagement_drop_percent']], 
             use_container_width=True,
             hide_index=True
         )
         
         st.divider()
         st.markdown("#### **Deep-Dive Action**")
-        target_id = st.selectbox("Select Patient Profile", latest_df['patient_id'])
-        current_data = latest_df[latest_df['patient_id'] == target_id].iloc[0]
+        target_id = st.selectbox("Select Patient Profile", display_df['patient_id'])
+        current_data = display_df[display_df['patient_id'] == target_id].iloc[0]
 
     with col_detail:
         if st.button(f"⚡ Generate AI Intelligence for {target_id}"):
@@ -140,6 +176,7 @@ if not df.empty:
             }
             
             try:
+                # Note: Ensure the URL matches your backend deployment
                 resp = requests.post("https://nhs-ai-clinical-support-gl6v.onrender.com/analyze", json=payload).json()
                 
                 # Risk Visualization
