@@ -1,18 +1,17 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import pipeline
 import uvicorn
+import requests
 import os
 
-app = FastAPI(title="NHS Sentinel AI Backend")
+app = FastAPI()
 
-# Optimization: Use a smaller model to stay under 512MB RAM
-# 'typeform/distilbert-base-uncased-mnli' is significantly lighter than BART
-nlp_engine = pipeline(
-    "zero-shot-classification", 
-    model="typeform/distilbert-base-uncased-mnli",
-    model_kwargs={"torch_dtype": "auto"}
-)
+# --- CONFIGURATION ---
+# 1. Get a free API token from: https://huggingface.co/settings/tokens
+# 2. Add it to Render "Environment Variables" as HF_TOKEN
+HF_TOKEN = os.environ.get("HF_TOKEN")
+API_URL = "https://api-inference.huggingface.co/models/typeform/distilbert-base-uncased-mnli"
+headers = {"Authorization": f"Bearer {HF_TOKEN}"}
 
 class PatientData(BaseModel):
     patient_id: str
@@ -22,15 +21,15 @@ class PatientData(BaseModel):
     referral_text: str
 
 @app.get("/")
-def health_check():
-    return {"status": "online", "model": "distilbert-mnli"}
+def home():
+    return {"status": "Sentinel AI Online", "mode": "Inference API"}
 
 @app.post("/analyze")
 async def analyze_patient(data: PatientData):
     score = 0
     alerts = []
     
-    # 1. Behavioral Scoring
+    # 1. Behavioral Scoring (Logic remains local and fast)
     if data.missed_appointments >= 3:
         score += 40
         alerts.append("Frequent missed contacts")
@@ -40,11 +39,21 @@ async def analyze_patient(data: PatientData):
     if data.prev_crisis:
         score += 15
         
-    # 2. NLP Context
-    categories = ["urgent clinical need", "routine monitoring", "emotional distress"]
-    # The engine runs on the optimized DistilBERT model
-    nlp_res = nlp_engine(data.referral_text, categories)
-    top_label = nlp_res['labels'][0]
+    # 2. NLP Context (Offloaded to Hugging Face)
+    payload = {
+        "inputs": data.referral_text,
+        "parameters": {"candidate_labels": ["urgent clinical need", "routine monitoring", "emotional distress"]}
+    }
+    
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload).json()
+        # Handle API errors or model loading
+        if "error" in response:
+            top_label = "routine monitoring" # Fallback
+        else:
+            top_label = response['labels'][0]
+    except:
+        top_label = "routine monitoring"
 
     # 3. Final Triage logic
     if score >= 70 or top_label == "urgent clinical need":
@@ -63,6 +72,5 @@ async def analyze_patient(data: PatientData):
     }
 
 if __name__ == "__main__":
-    # Use environment variable for port to satisfy Render's dynamic binding
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
