@@ -29,16 +29,17 @@ st.markdown("""
             color: white !important;
         }
 
-        /* UPLOADER VISIBILITY FIX: Changing background and border */
+        /* UPLOADER VISIBILITY FIX */
         [data-testid="stFileUploader"] section {
-            background-color: #e1e8ed !important; /* Visible light grey/blue */
-            border: 2px dashed #005eb8 !important; /* NHS Blue dash */
+            background-color: #e1e8ed !important; 
+            border: 2px dashed #005eb8 !important; 
             border-radius: 10px;
             padding: 10px;
         }
-        [data-testid="stFileUploader"] label {
-            color: #002f5c !important; /* Dark text for visibility */
-            font-weight: bold;
+        /* Fix for "200MB per file" and uploader labels */
+        [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] label {
+            color: #002f5c !important; 
+            font-weight: bold !important;
         }
         [data-testid="stFileUploader"] button {
             background-color: #005eb8 !important;
@@ -58,7 +59,21 @@ st.markdown("""
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* KPI Metric Cards */
+        /* NEW: Light Blue Background for Master List Header */
+        .list-header-box {
+            background-color: #d1e9ff;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 6px solid #005eb8;
+            margin-bottom: 15px;
+        }
+        .list-header-text {
+            color: #002f5c !important;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        /* Metric Cards */
         div[data-testid="stMetricValue"] {
             background-color: white;
             padding: 20px;
@@ -77,18 +92,20 @@ st.markdown("""
             border: none;
             font-weight: bold;
         }
+        .stButton>button:hover {
+            background-color: #003087;
+            transform: translateY(-2px);
+        }
     </style>
     """, unsafe_allow_html=True)
 
-# --- Sidebar Management (Items Moved Up) ---
+# --- Sidebar Management ---
 with st.sidebar:
-    # 1. Logo at the very top
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/NHS-Logo.svg/1280px-NHS-Logo.svg.png", width=120)
     st.markdown("## **🏥 Clinical Gateway**")
     st.caption("Secure Workforce Entry")
     st.divider()
     
-    # 2. File Upload with Visibility Fix
     st.subheader("📁 Data Ingestion")
     file = st.file_uploader("Drop patient caseload here", type=['csv', 'xlsx', 'json'])
     
@@ -111,10 +128,8 @@ df = get_patients()
 if not df.empty:
     latest_df = df.sort_values('date').groupby('patient_id').tail(1)
     
-    # --- Dynamic & Clickable KPI Category Filters ---
     st.markdown("### 📊 Interactive Triage Summary")
     
-    # Logic for categories
     risk_threshold = 3
     high_risk_df = latest_df[latest_df['missed_appointments'] >= risk_threshold]
     stable_df = latest_df[latest_df['missed_appointments'] < risk_threshold]
@@ -141,19 +156,21 @@ if not df.empty:
     # Filter Application
     current_filter = st.session_state.get('filter', 'all')
     if current_filter == 'high':
-        display_df = high_risk_df
-        table_title = "🚩 Critical Queue: High Missed Appointments"
+        display_df, table_title = high_risk_df, "🚩 Critical Queue: High Risk"
     elif current_filter == 'stable':
-        display_df = stable_df
-        table_title = "✅ Clinical Update: Stable Patients"
+        display_df, table_title = stable_df, "✅ Clinical Update: Stable Patients"
     else:
-        display_df = latest_df
-        table_title = "📋 Patient Caseload Master List"
+        display_df, table_title = latest_df, "📋 Patient Caseload Master List"
 
     col_list, col_detail = st.columns([1.2, 1.8], gap="large")
     
     with col_list:
-        st.subheader(table_title)
+        st.markdown(f"""
+            <div class="list-header-box">
+                <h3 class="list-header-text">{table_title}</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
         st.dataframe(
             display_df[['patient_id', 'missed_appointments', 'engagement_drop_percent']], 
             use_container_width=True,
@@ -181,7 +198,6 @@ if not df.empty:
             }
             
             try:
-                # Backend URL pointing to Render
                 resp = requests.post("https://nhs-ai-clinical-support-gl6v.onrender.com/analyze", json=payload).json()
                 
                 risk_color = "#d4351c" if resp['risk_level'] == "HIGH" else "#ffdd00" if resp['risk_level'] == "MODERATE" else "#00703c"
@@ -193,9 +209,12 @@ if not df.empty:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                st.write("### 📈 Engagement Trajectory")
-                patient_history = df[df['patient_id'] == target_id].sort_values('date')
-                st.area_chart(patient_history.set_index('date')['engagement_drop_percent'])
+                # --- NEW: Enhanced Visualization (Line for Engagement, Bar for Contacts) ---
+                st.write("### 📈 Engagement & Contact Velocity")
+                hist = df[df['patient_id'] == target_id].sort_values('date')
+                
+                st.line_chart(hist.set_index('date')['engagement_drop_percent'], color="#005eb8")
+                st.bar_chart(hist.set_index('date')['missed_appointments'], color="#d4351c")
                 
                 st.markdown("### 🤖 Neural Alert Reasoning")
                 for alert in resp['alerts']:
