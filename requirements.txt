@@ -1,13 +1,5 @@
 fastapi
 uvicorn
-streamlit
-pandas
-numpy
 requests
-openpyxl
-xgboost
-lightgbm
-scikit-learn
-transformers
-torch
-spacy
+pydantic
+pandas
