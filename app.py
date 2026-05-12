@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Premium Sleek CSS Overhaul ---
+# --- High-Contrast Enterprise Styling ---
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
@@ -22,7 +22,7 @@ st.markdown("""
             background-color: #f4f7f9;
         }
 
-        /* Sidebar: Restored Solid NHS Navy */
+        /* Sidebar: Solid NHS Navy */
         [data-testid="stSidebar"] {
             background-color: #002f5c !important;
         }
@@ -30,22 +30,23 @@ st.markdown("""
             color: white !important;
         }
 
-        /* FILE UPLOADER VISIBILITY */
+        /* UPLOADER: Solid Blue Background with White Text */
         [data-testid="stFileUploader"] section {
-            background-color: #ffffff !important; 
-            border: 2px solid #005eb8 !important; 
+            background-color: #005eb8 !important; 
+            border: 2px solid #ffffff !important; 
             border-radius: 12px;
+            padding: 15px;
         }
-        /* High-Visibility Blue Text for Uploader Details */
+        /* Forcing White Text for Uploader Visibility */
         [data-testid="stFileUploader"] label, 
         [data-testid="stFileUploader"] small,
         [data-testid="stFileUploader"] span {
-            color: #005eb8 !important; 
+            color: #ffffff !important; 
             font-weight: 800 !important;
-            font-size: 0.9rem !important;
+            font-size: 0.95rem !important;
         }
 
-        /* HEADER: NHS Blue with Refined Text */
+        /* HEADER: NHS Blue */
         .main-header-container {
             display: flex;
             align-items: center;
@@ -61,10 +62,9 @@ st.markdown("""
             font-weight: 600; 
             font-size: 1.8rem;
             margin-left: 20px;
-            letter-spacing: 0.5px;
         }
 
-        /* NEWS TICKER FEED */
+        /* NEWS TICKER */
         .news-ticker {
             background: #e6f2ff;
             padding: 10px;
@@ -86,38 +86,28 @@ st.markdown("""
             100% { transform: translate(-100%, 0); }
         }
 
-        /* DYNAMIC PULSING KPI CARDS */
+        /* FILTER BUTTONS: High-Contrast Labeling */
+        .stButton>button {
+            background-color: #005eb8 !important;
+            color: white !important;
+            border: 2px solid #003087 !important;
+            font-weight: 800 !important;
+            font-size: 1rem !important;
+            height: 3.5rem !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+        }
+        .stButton>button:hover {
+            background-color: #003087 !important;
+            transform: scale(1.02);
+        }
+
+        /* KPI Cards */
         div[data-testid="stMetricValue"] {
             background-color: white;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             border-bottom: 5px solid #005eb8;
-            animation: kpi-pulse 4s infinite ease-in-out;
-        }
-        @keyframes kpi-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-
-        /* FILTER BUTTONS: NHS BLUE */
-        .stButton>button {
-            background-color: #005eb8 !important;
-            color: white !important;
-            border-radius: 8px !important;
-            font-weight: 600 !important;
-            border: none !important;
-        }
-        .stButton>button:hover {
-            background-color: #003087 !important;
-            box-shadow: 0 4px 12px rgba(0, 48, 135, 0.2) !important;
-        }
-
-        /* ITALIC ALERTS */
-        .ai-alert-text {
-            font-style: italic;
-            color: #d4351c;
-            font-weight: 600;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -129,6 +119,7 @@ with st.sidebar:
     st.divider()
     
     st.subheader("Data Ingestion")
+    # This section is now solid blue with white text via CSS
     file = st.file_uploader("UPLOAD PATIENT CASELOAD", type=['csv', 'xlsx', 'json'])
     
     if file:
@@ -137,7 +128,7 @@ with st.sidebar:
         else: st.error(msg)
     
     st.divider()
-    st.info("System Version: 2.1.0-Enterprise")
+    st.info("System: NHS Decision Support v2.2.7")
 
 # --- Main Dashboard Header ---
 st.markdown(f"""
@@ -147,11 +138,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Live News Ticker
+# Live Ticker
 st.markdown("""
     <div class="news-ticker">
         <div class="ticker-text">
-            SYSTEM UPDATE: AI Analysis Node Active • 🔴 HIGH RISK: 3 Pending Reviews • 🟢 STABLE: 91 Patients Operational • Clinical Governance Protocol 2026 Verified ...
+            SYSTEM FEED: AI Diagnostics Operational • 🔴 CRITICAL: 3 New Alerts Detected • 🟢 STABLE: 91% Engagement Rate ...
         </div>
     </div>
 """, unsafe_allow_html=True)
@@ -170,17 +161,17 @@ if not df.empty:
     m1, m2, m3 = st.columns(3)
     with m1:
         st.metric("Total Caseload", len(latest_df))
-        if st.button("View Full Queue", use_container_width=True): st.session_state['filter'] = 'all'
+        if st.button("View Full Master List", use_container_width=True): st.session_state['filter'] = 'all'
     with m2:
-        st.metric("🔴 Critical Flags", len(high_risk_df), delta="Requires Review")
-        if st.button("Filter High Risk", use_container_width=True): st.session_state['filter'] = 'high'
+        st.metric("🔴 Critical Flags", len(high_risk_df), delta="Review Required")
+        if st.button("🔴 FILTER HIGH RISK", use_container_width=True): st.session_state['filter'] = 'high'
     with m3:
-        st.metric("🟢 Stable Engagement", len(stable_df), delta="Operational")
-        if st.button("Filter Stable", use_container_width=True): st.session_state['filter'] = 'stable'
+        st.metric("🟢 Stable Engagement", len(stable_df), delta="Nominal")
+        if st.button("🟢 FILTER STABLE", use_container_width=True): st.session_state['filter'] = 'stable'
 
     st.write("---")
 
-    # Filter Application
+    # Filter Logic
     current_filter = st.session_state.get('filter', 'all')
     if current_filter == 'high':
         display_df, title, box_bg = high_risk_df, "🔴 Priority Critical Queue", "#ffebe9"
@@ -195,11 +186,11 @@ if not df.empty:
         st.markdown(f'<div style="background:{box_bg}; padding:15px; border-radius:10px; border-left:8px solid #005eb8;"><h3 style="margin:0; color:#002f5c; font-weight:800;">{title}</h3></div>', unsafe_allow_html=True)
         st.dataframe(display_df[['patient_id', 'missed_appointments', 'engagement_drop_percent']], use_container_width=True, hide_index=True)
         st.divider()
-        target_id = st.selectbox("Search Patient ID", display_df['patient_id'])
+        target_id = st.selectbox("Search Patient Identifier", display_df['patient_id'])
         current_data = display_df[display_df['patient_id'] == target_id].iloc[0]
 
     with col_detail:
-        if st.button(f"⚡ Generate AI Intelligence for {target_id}", key="analysis_btn"):
+        if st.button(f"⚡ EXECUTE AI DIAGNOSTICS FOR {target_id}", type="primary"):
             with st.status("Analyzing...", expanded=False):
                 payload = {
                     "patient_id": str(current_data['patient_id']),
@@ -215,22 +206,17 @@ if not df.empty:
             st.markdown(f"""
                 <div style="background: white; padding: 25px; border-radius: 15px; border-left: 12px solid {risk_color}; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
                     <h2 style="margin:0; color: {risk_color}; font-weight:800;">{resp['risk_level']} RISK</h2>
-                    <p style="color: #002f5c; font-weight: 700; margin-top:5px;">CONTEXT: {resp['context'].upper()}</p>
+                    <p style="color: #002f5c; font-weight: 700; font-size: 1.1rem; margin-top:5px;">CONTEXT: {resp['context'].upper()}</p>
                 </div>
             """, unsafe_allow_html=True)
             
-            st.write("#### 📈 Historical Analysis")
+            st.write("#### 📈 Behavioral Trajectory")
             hist = df[df['patient_id'] == target_id].sort_values('date')
             st.line_chart(hist.set_index('date')[['engagement_drop_percent', 'missed_appointments']], color=["#005eb8", "#d4351c"])
             
-            st.markdown("### 🤖 Neural Reasoning")
             if resp['alerts']:
                 for alert in resp['alerts']:
-                    st.markdown(f"<p class='ai-alert-text'>• {alert}</p>", unsafe_allow_html=True)
-            else:
-                st.markdown("<p class='ai-alert-text'>No critical behavioral anomalies detected.</p>", unsafe_allow_html=True)
-                
-            st.caption(f"🛡️ Governance: {resp['governance']}")
+                    st.markdown(f"<p style='font-style:italic; color:#d4351c; font-weight:600;'>• {alert}</p>", unsafe_allow_html=True)
 
 else:
     st.info("System Ready. Please use the Clinical Gateway to upload records.")
