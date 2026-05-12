@@ -6,155 +6,131 @@ from data_manager import get_patients, process_upload
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="NHS Sentinel AI | Clinical Support", 
+    page_title="NHS AI Clinical Support", 
     page_icon="🏥", 
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# --- THE PREMIUM CSS CORE ---
+# --- Premium Custom CSS (Hospital/Enterprise Style) ---
 st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-
-        /* Global Font & Background */
-        html, body, [class*="st-"] {
-            font-family: 'Inter', sans-serif;
-            background-color: #F3F2F1; /* Professional Clinical White */
+        /* Main App Background */
+        .stApp {
+            background-color: #f0f4f7;
         }
-
-        /* Top Navigation Bar Simulation */
-        .top-nav {
-            background-color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-            border-radius: 12px;
-        }
-
-        /* Sidebar Styling: Dark Professional */
+        
+        /* Sidebar Styling */
         [data-testid="stSidebar"] {
-            background-color: #002F5C !important;
-            border-right: none;
+            background-color: #002f5c; /* Deep NHS Navy */
+            color: white;
         }
         [data-testid="stSidebar"] * {
-            color: #FFFFFF !important;
+            color: white !important;
         }
 
-        /* High-End KPI Cards */
-        .kpi-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
+        /* Hospital Card Style for Metrics and Containers */
+        div[data-testid="stMetricValue"] {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 5px solid #005eb8;
         }
-        .kpi-card {
-            flex: 1;
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            border: 1px solid #E1E4E8;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        
+        /* Custom Header */
+        .main-header {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #005eb8;
+            font-weight: 800;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #005eb8;
+            margin-bottom: 30px;
         }
-        .kpi-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 30px rgba(0,94,184,0.1);
-            border-color: #005EB8;
-        }
-        .kpi-label { color: #6E7781; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .kpi-value { color: #002F5C; font-size: 2.2rem; font-weight: 800; margin: 8px 0; }
 
-        /* Status Badges */
-        .badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
+        /* Dynamic Button Effect */
+        .stButton>button {
+            width: 100%;
+            border-radius: 8px;
+            background-color: #005eb8;
+            color: white;
+            transition: all 0.3s ease;
+            border: none;
+            font-weight: bold;
         }
-        .badge-live { background: #E7F6EC; color: #09822D; }
+        .stButton>button:hover {
+            background-color: #003087;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,94,184,0.3);
+        }
 
-        /* The Result Card */
-        .analysis-box {
-            background: white;
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-            border-top: 8px solid #005EB8;
+        /* Table Styling */
+        .stDataFrame {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
     </style>
     """, unsafe_allow_html=True)
 
-# --- Top Navigation ---
-st.markdown("""
-    <div class="top-nav">
-        <div style="display: flex; align-items: center;">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/NHS-Logo.svg" width="80" style="margin-right: 20px;">
-            <span style="font-weight: 800; font-size: 1.2rem; color: #002F5C;">SENTINEL AI <span style="font-weight: 400; color: #6E7781;">| Population Health</span></span>
-        </div>
-        <div class="badge badge-live">● SYSTEM LIVE</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# --- Sidebar ---
+# --- Sidebar Management ---
 with st.sidebar:
-    st.markdown("### **Workspace Hub**")
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/NHS-Logo.svg/1280px-NHS-Logo.svg.png", width=120)
+    st.markdown("### **Clinical Gateway**")
     st.divider()
-    file = st.file_uploader("📥 Upload New Caseload", type=['csv', 'xlsx', 'json'])
-    if file:
-        df_new, msg = process_upload(file)
-        if df_new is not None: st.success("Data Synchronized")
-        else: st.error(msg)
+    st.subheader("📁 Data Ingestion")
+    file = st.file_uploader("Upload Caseload", type=['csv', 'xlsx', 'json'])
     
-    st.divider()
-    st.markdown("#### **Current Active Model**")
-    st.code("distilbart-mnli-12-3", language="text")
-    st.info("Human-in-the-loop oversight is active.")
+    if file:
+        with st.spinner("Processing Records..."):
+            df_new, msg = process_upload(file)
+            if df_new is not None:
+                st.success("Sync Complete")
+            else:
+                st.error(msg)
+    
+    st.info("System Version: 2.1.0-Enterprise")
 
-# --- Main Logic ---
+# --- Main Dashboard ---
+st.markdown('<h1 class="main-header">🏥 Clinical Decision Support: Population Health</h1>', unsafe_allow_html=True)
+
 df = get_patients()
 
 if not df.empty:
     latest_df = df.sort_values('date').groupby('patient_id').tail(1)
     
-    # --- DYNAMIC KPI ROW ---
-    total_patients = len(latest_df)
-    risks = len(latest_df[latest_df['missed_appointments'] >= 3])
-    avg_engagement = int(latest_df['engagement_drop_percent'].mean())
+    # Dynamic Dashboard Summary (Dynamic Metrics)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Total Caseload", f"{len(latest_df)} Patients", help="Total unique patients in current system")
+    m2.metric("Active Risks", f"{len(latest_df[latest_df['missed_appointments'] >= 3])}", "Behavioral Flags", delta_color="inverse")
+    m3.metric("System Health", "Operational", "Stable Latency")
 
-    st.markdown(f"""
-        <div class="kpi-container">
-            <div class="kpi-card"><p class="kpi-label">Active Caseload</p><p class="kpi-value">{total_patients}</p></div>
-            <div class="kpi-card" style="border-bottom: 4px solid #D4351C;"><p class="kpi-label" style="color:#D4351C;">Critical Flags</p><p class="kpi-value">{risks}</p></div>
-            <div class="kpi-card"><p class="kpi-label">Mean Engagement</p><p class="kpi-value">{avg_engagement}%</p></div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.write("---")
 
-    # --- Dashboard Content ---
-    left, right = st.columns([1, 1.8], gap="large")
-
-    with left:
-        st.markdown("### **Caseload Queue**")
+    col_list, col_detail = st.columns([1.2, 1.8], gap="large")
+    
+    with col_list:
+        st.subheader("📋 Patient Queue")
+        # Displaying a cleaner dataframe
         st.dataframe(
             latest_df[['patient_id', 'missed_appointments', 'engagement_drop_percent']], 
-            use_container_width=True, 
+            use_container_width=True,
             hide_index=True
         )
+        
         st.divider()
-        target_id = st.selectbox("🎯 Focus Patient Profile", latest_df['patient_id'])
+        st.markdown("#### **Deep-Dive Action**")
+        target_id = st.selectbox("Select Patient Profile", latest_df['patient_id'])
         current_data = latest_df[latest_df['patient_id'] == target_id].iloc[0]
 
-    with right:
-        if st.button(f"🚀 Execute Deep-Dive Analysis for {target_id}", use_container_width=True):
-            # Dynamic Loading Simulation
-            with st.status("Engaging AI Neural Pathways...", expanded=True) as status:
-                st.write("Extracting clinical biomarkers...")
-                time.sleep(0.5)
-                st.write("Verifying risk weights...")
-                time.sleep(0.5)
-                status.update(label="Analysis Sequence Complete", state="complete", expanded=False)
-
+    with col_detail:
+        if st.button(f"⚡ Generate AI Intelligence for {target_id}"):
+            # Dynamic Loading Bar for "Premium" feel
+            progress_bar = st.progress(0)
+            for i in range(100):
+                time.sleep(0.005)
+                progress_bar.progress(i + 1)
+            
             payload = {
                 "patient_id": str(current_data['patient_id']),
                 "missed_appointments": int(current_data['missed_appointments']),
@@ -166,41 +142,30 @@ if not df.empty:
             try:
                 resp = requests.post("https://nhs-ai-clinical-support-gl6v.onrender.com/analyze", json=payload).json()
                 
-                # Dynamic Logic for UI Colors
-                risk_color = "#D4351C" if resp['risk_level'] == "HIGH" else "#FFDD00" if resp['risk_level'] == "MODERATE" else "#00703C"
+                # Risk Visualization
+                risk_color = "#d4351c" if resp['risk_level'] == "HIGH" else "#ffdd00" if resp['risk_level'] == "MODERATE" else "#00703c"
                 
-                # --- PREMIUM ANALYSIS OUTPUT ---
                 st.markdown(f"""
-                    <div class="analysis-box" style="border-top-color: {risk_color};">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <p style="color: #6E7781; text-transform: uppercase; font-weight: 700; font-size: 0.8rem; margin:0;">AI Classification Result</p>
-                                <h1 style="color: {risk_color}; margin: 5px 0 15px 0; font-size: 3rem; font-weight: 900;">{resp['risk_level']}</h1>
-                            </div>
-                            <div style="background: {risk_color}10; padding: 10px 20px; border-radius: 12px; border: 1px solid {risk_color};">
-                                <span style="color: {risk_color}; font-weight: 800;">{resp['context'].upper()}</span>
-                            </div>
-                        </div>
-                        <hr style="border: 0; border-top: 1px solid #EEE; margin: 20px 0;">
-                        <h4 style="color: #002F5C;">Engagement Velocity (Historical)</h4>
+                    <div style="background-color: white; padding: 25px; border-radius: 15px; border-left: 10px solid {risk_color};">
+                        <h2 style="margin:0; color: {risk_color};">{resp['risk_level']} RISK</h2>
+                        <p style="color: #505a5f;">Primary Context: <b>{resp['context'].upper()}</b></p>
                     </div>
                 """, unsafe_allow_html=True)
-
-                # Chart integrated just below
-                hist = df[df['patient_id'] == target_id].sort_values('date')
-                st.area_chart(hist.set_index('date')['engagement_drop_percent'], color="#005EB8")
-
-                # Alerts Grid
-                st.markdown("### **Neural Insights**")
-                cols = st.columns(len(resp['alerts']) if resp['alerts'] else 1)
-                for i, alert in enumerate(resp['alerts']):
-                    with cols[i]:
-                        st.info(f"**Alert:**\n{alert}")
                 
-                st.caption(f"🔒 **Governance Notice:** {resp['governance']}")
-
+                # Chart Section
+                st.write("### 📈 Engagement Trajectory")
+                patient_history = df[df['patient_id'] == target_id].sort_values('date')
+                st.area_chart(patient_history.set_index('date')['engagement_drop_percent'])
+                
+                # AI Insights
+                st.markdown("### 🤖 AI Insight Reasoning")
+                for alert in resp['alerts']:
+                    st.warning(f"**Alert:** {alert}")
+                
+                st.caption(f"🛡️ **Governance:** {resp['governance']}")
+                
             except Exception as e:
-                st.error("Error: Could not reach AI Backend on Render. Please verify the service is awake.")
+                st.error("Connection to AI Engine failed. Please verify the Render backend is live.")
 
 else:
-    st.info("Welcome to Sentinel AI. Use the sidebar to upload patient caseloads for triage.")
+    st.info("No data detected. Please use the sidebar to upload patient records.")
