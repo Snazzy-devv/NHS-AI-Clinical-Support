@@ -22,7 +22,7 @@ st.markdown("""
             background-color: #f4f7f9;
         }
 
-        /* Sidebar: Solid NHS Navy */
+        /* Sidebar: Restored Solid NHS Navy */
         [data-testid="stSidebar"] {
             background-color: #002f5c !important;
         }
@@ -36,14 +36,16 @@ st.markdown("""
             border: 2px solid #005eb8 !important; 
             border-radius: 12px;
         }
+        /* High-Visibility Blue Text for Uploader Details */
         [data-testid="stFileUploader"] label, 
         [data-testid="stFileUploader"] small,
         [data-testid="stFileUploader"] span {
             color: #005eb8 !important; 
             font-weight: 800 !important;
+            font-size: 0.9rem !important;
         }
 
-        /* UPDATED HEADER: NHS Blue with Logo & Refined Text */
+        /* HEADER: NHS Blue with Refined Text */
         .main-header-container {
             display: flex;
             align-items: center;
@@ -56,7 +58,7 @@ st.markdown("""
         }
         .main-header-text {
             color: white;
-            font-weight: 600; /* Less bold as requested */
+            font-weight: 600; 
             font-size: 1.8rem;
             margin-left: 20px;
             letter-spacing: 0.5px;
@@ -96,6 +98,19 @@ st.markdown("""
         @keyframes kpi-pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.02); }
+        }
+
+        /* FILTER BUTTONS: NHS BLUE */
+        .stButton>button {
+            background-color: #005eb8 !important;
+            color: white !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            border: none !important;
+        }
+        .stButton>button:hover {
+            background-color: #003087 !important;
+            box-shadow: 0 4px 12px rgba(0, 48, 135, 0.2) !important;
         }
 
         /* ITALIC ALERTS */
@@ -184,7 +199,7 @@ if not df.empty:
         current_data = display_df[display_df['patient_id'] == target_id].iloc[0]
 
     with col_detail:
-        if st.button(f"⚡ Generate AI Intelligence for {target_id}", type="primary"):
+        if st.button(f"⚡ Generate AI Intelligence for {target_id}", key="analysis_btn"):
             with st.status("Analyzing...", expanded=False):
                 payload = {
                     "patient_id": str(current_data['patient_id']),
@@ -209,7 +224,6 @@ if not df.empty:
             st.line_chart(hist.set_index('date')[['engagement_drop_percent', 'missed_appointments']], color=["#005eb8", "#d4351c"])
             
             st.markdown("### 🤖 Neural Reasoning")
-            # UPDATED: Alerts in Italic
             if resp['alerts']:
                 for alert in resp['alerts']:
                     st.markdown(f"<p class='ai-alert-text'>• {alert}</p>", unsafe_allow_html=True)
